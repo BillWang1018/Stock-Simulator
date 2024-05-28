@@ -1,0 +1,22 @@
+{% block title %}
+  My Tennis Club
+{% endblock %}
+
+
+{% block content %}
+  <h1>My Tennis Club</h1>
+
+  <h3>Members</h3>
+  
+  <hr>
+  
+  {% if user.is_authenticated %}
+    <a href="{% url 'logout' %}">Logout </a> (Your have login as {{ user }}) 
+  {% else %}
+    <a href="{% url 'login' %}">Login</a>
+  {% endif %}
+
+  <a href="/login/register">sign up</a>
+
+  
+{% endblock %}
