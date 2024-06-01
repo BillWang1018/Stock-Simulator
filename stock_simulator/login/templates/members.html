@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Members</title>
+</head>
+<body>
+    <a href="/">HOME</a>
+    <h1>Members</h1>
+    <table border="1">
+        <tr>
+            {% for column in members.0.keys %}
+                <th>{{ column }}</th>
+            {% endfor %}
+        </tr>
+        {% for member in members %}
+            <tr>
+                {% for value in member.values %}
+                    <td>{{ value }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+</body>
+</html>
