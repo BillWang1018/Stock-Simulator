@@ -13,6 +13,20 @@ from django.db import connection
 
 from django.db import connection
 
+from django.shortcuts import render
+from django.db import connection
+
+def stock(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM stock;")
+        columns = [col[0] for col in cursor.description]
+        rows = cursor.fetchall()
+    members = []
+    for row in rows:
+        member_dict = dict(zip(columns, row))
+        members.append(member_dict)
+    return render(request, 'stock.html', {'members': members})
+
 def members_view(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT * FROM customer;")

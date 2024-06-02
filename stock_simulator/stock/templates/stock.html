@@ -6,18 +6,22 @@
 <body>
     <h1>Stock Information</h1>
     <table border="1">
-        <tr>
-            <th>Stock Name</th>
-            <th>Stock Number</th>
-            <th>Over Amount</th>
-        </tr>
-        {% for stock in stocks %}
-        <tr>
-            <td>{{ stock.sname }}</td>
-            <td>{{ stock.number }}</td>
-            <td>{{ stock.overamt }}</td>
-        </tr>
-        {% endfor %}
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Number</th>
+                <th>OverAmt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+                <tr>
+                    <td>{{ member.Name }}</td>
+                    <td>{{ member.Number }}</td>
+                    <td>{{ member.OverAmt}}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
     </table>
 </body>
 </html>
