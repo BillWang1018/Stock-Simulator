@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stock Information</title>
+</head>
+<body>
+    <h1>Stock Information</h1>
+    <table border="1">
+        <tr>
+            <th>Stock Name</th>
+            <th>Stock Number</th>
+            <th>Over Amount</th>
+        </tr>
+        {% for stock in stocks %}
+        <tr>
+            <td>{{ stock.sname }}</td>
+            <td>{{ stock.number }}</td>
+            <td>{{ stock.overamt }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

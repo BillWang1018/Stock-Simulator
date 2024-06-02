@@ -1,3 +1,7 @@
 from django.shortcuts import render
+from .models import Stock, Quotations, Inventory
 
-# Create your views here.
+def stock_view(request):
+    stocks = Stock.objects.all()
+    return render(request, 'stock.html', {'stocks': stocks})
+
