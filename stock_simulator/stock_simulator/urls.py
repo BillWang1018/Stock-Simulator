@@ -22,5 +22,6 @@ urlpatterns = [
     path('',include('members.urls')),
     path('', include('login.urls')),
     path('stock/', include('stock.urls')),
+    path('flask_app/',include('flask_app.urls')),
 ]
 

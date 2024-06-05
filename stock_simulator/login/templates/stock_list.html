@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stock Information</title>
+</head>
+<body>
+<a href="/" class="home">首頁</a>
+<a href="/admin" class="admin">管理</a>
+<h1>Stock Information</h1>
+<table>
+    <tr>
+        <th>Snum</th>
+    </tr>
+    {% for member in members %}
+    <tr>
+        <td><a href="{{ url_for('stock_detail', snum=member.Snum) }}">{{ member.Snum }}</a></td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
+
