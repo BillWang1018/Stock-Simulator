@@ -27,6 +27,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTHENTICATION_BACKENDS = [
+    'your_app.backends.MySQLAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Application definition
 

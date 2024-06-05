@@ -15,3 +15,6 @@ class RegisterForm(forms.ModelForm):
         if commit:
             customer.save()
         return customer
+class LoginForm(forms.Form):
+    account = forms.CharField(max_length=255)
+    password = forms.CharField(widget=forms.PasswordInput)

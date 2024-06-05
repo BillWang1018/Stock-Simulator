@@ -6,37 +6,55 @@ from django.template import loader
 from django.contrib import messages
 from .forms import RegisterForm
 from django.db import connection
-
+from .forms import LoginForm
 logger = logging.getLogger(__name__)
 
 def login_view(request):
+    # Load the login template
     login_page = loader.get_template('login.html')
+
     if request.method == 'GET':
-        login_form = RegisterForm()
+        # If it's a GET request, render the login form
+        login_form = LoginForm()
         context = {
             'user': request.user,
             'login_form': login_form,
         }
         return HttpResponse(login_page.render(context, request))
-    elif request.method == "POST":
-        login_form = RegisterForm(request.POST)
+
+    elif request.method == 'POST':
+        # If it's a POST request, process the login form
+        login_form = LoginForm(request.POST)
+
         if login_form.is_valid():
+            # If the form is valid, attempt to authenticate the user
             account = login_form.cleaned_data['account']
             password = login_form.cleaned_data['password']
-            user = authenticate(request, username=account, password=password)
+
+            # Securely authenticate the user
+            user = authenticate(request, account=account, password=password)
+
             if user is not None:
+                # If authentication succeeds, fetch stock data and log in the user
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT * FROM stock;")
+                    columns = [col[0] for col in cursor.description]
+                    rows = cursor.fetchall()
+                stocks = [dict(zip(columns, row)) for row in rows]
+
                 auth_login(request, user)
-                main_page = loader.get_template('main.html')
-                context = {'user': request.user, 'message': 'login ok'}
-                return HttpResponse(main_page.render(context, request))
+                return render(request, 'stocks.html', {'stocks': stocks})
             else:
-                message = 'Login failed (auth fail)'
+                # If authentication fails, return an error message
+                message = 'Login failed (invalid credentials)'
                 return HttpResponse(message)
         else:
+            # If the form is not valid, return an error message
             return HttpResponse("Login form is not valid")
-    else:
-        return HttpResponse("Error on request (not GET/POST)")
 
+    else:
+        # Return an error if the request method is neither GET nor POST
+        return HttpResponse("Error: Unsupported request method")
 def logout_view(request):
     auth_logout(request)
     main_html = loader.get_template('main.html')
@@ -94,9 +112,9 @@ def stock_list(request):
     members = [dict(zip(columns, row)) for row in rows]
     return render(request, 'stock_list.html', {'members': members})
 
-def stock_detail(request, pk):
+def stock_detail(request, snum):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM quotations WHERE Snum = %s", [pk])
+        cursor.execute("SELECT * FROM quotations WHERE Snum = %s", [snum])
         columns = [col[0] for col in cursor.description]
         row = cursor.fetchone()
     stock = dict(zip(columns, row)) if row else None
