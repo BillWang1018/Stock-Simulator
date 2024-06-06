@@ -1,60 +1,75 @@
 import logging
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.template import loader
 from django.contrib import messages
-from .forms import RegisterForm
+
+from members.models import Customer
+from .forms import RegisterForm, LoginForm
+from django.contrib.auth.models import User
+
 from django.db import connection
-from .forms import LoginForm
+
+from django.db import connection
+
+from django.shortcuts import render
+from django.db import connection
 logger = logging.getLogger(__name__)
 
 def login_view(request):
-    # Load the login template
     login_page = loader.get_template('login.html')
-
     if request.method == 'GET':
-        # If it's a GET request, render the login form
         login_form = LoginForm()
         context = {
-            'user': request.user,
             'login_form': login_form,
+            'user': request.user,
         }
         return HttpResponse(login_page.render(context, request))
-
-    elif request.method == 'POST':
-        # If it's a POST request, process the login form
+    elif request.method == "POST":
         login_form = LoginForm(request.POST)
 
         if login_form.is_valid():
-            # If the form is valid, attempt to authenticate the user
             account = login_form.cleaned_data['account']
             password = login_form.cleaned_data['password']
+            user = None
+            aa = 0
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM customer WHERE account = %s", [account])
+                row = cursor.fetchone()
+                if row:
+                    db_password = row[4]
+                else:
+                    db_password = None
 
-            # Securely authenticate the user
-            user = authenticate(request, account=account, password=password)
+            if row and password == db_password:
+                aa = 1
+                user, created = User.objects.get_or_create(username=account)
+                if created:
+                    user.set_password(password)
+                    user.save()
+                else:
+                    user = authenticate(username=account, password=password)
 
-            if user is not None:
-                # If authentication succeeds, fetch stock data and log in the user
-                with connection.cursor() as cursor:
-                    cursor.execute("SELECT * FROM stock;")
-                    columns = [col[0] for col in cursor.description]
-                    rows = cursor.fetchall()
-                stocks = [dict(zip(columns, row)) for row in rows]
+                if user:
+                    auth_login(request, user)
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT * FROM stock;")
+                        columns = [col[0] for col in cursor.description]
+                        rows = cursor.fetchall()
+                    members = [dict(zip(columns, row)) for row in rows]
+                    return render(request, 'stocks.html', {'members': members})
 
-                auth_login(request, user)
-                return render(request, 'stocks.html', {'stocks': stocks})
-            else:
-                # If authentication fails, return an error message
-                message = 'Login failed (invalid credentials)'
-                return HttpResponse(message)
+                    #return redirect('stocks')
+
+            message = f'Login failed for account: {account}.'
+            return HttpResponse(message)
         else:
-            # If the form is not valid, return an error message
-            return HttpResponse("Login form is not valid")
-
+            message = 'Login form is not valid'
+            return HttpResponse(message)
     else:
-        # Return an error if the request method is neither GET nor POST
-        return HttpResponse("Error: Unsupported request method")
+        message = 'Error on request (not GET/POST)'
+        return HttpResponse(message)
 def logout_view(request):
     auth_logout(request)
     main_html = loader.get_template('main.html')
@@ -119,3 +134,18 @@ def stock_detail(request, snum):
         row = cursor.fetchone()
     stock = dict(zip(columns, row)) if row else None
     return render(request, 'stock_detail.html', {'stock': stock})
+
+def inventory_view(request, customer_id):
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT inventory.Snum, inventory.Amount, inventory.Price, inventory.Tstmp
+            FROM inventory
+            JOIN stock ON inventory.Snum = stock.Number
+            WHERE inventory.Cid = %s;
+            """, [customer_id]
+        )
+        columns = [col[0] for col in cursor.description]
+        rows = cursor.fetchall()
+    inventory = [dict(zip(columns, row)) for row in rows]
+    return render(request, 'inventory.html', {'inventory': inventory})

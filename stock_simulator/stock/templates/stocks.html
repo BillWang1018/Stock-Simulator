@@ -1,9 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Stock Information</title>
-</head>
-<body>
+{% extends "master.html" %}
+
+{% block title %}
+Stock Simulator
+{% endblock %}
+
+{% block content %}
     <h1>Stock Information</h1>
     <table border="1">
         <thead>
@@ -23,5 +24,6 @@
             {% endfor %}
         </tbody>
     </table>
-</body>
-</html>
+
+
+{% endblock %}
