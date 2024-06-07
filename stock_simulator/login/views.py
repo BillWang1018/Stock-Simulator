@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 from django.db import connection
 
 from django.db import connection
-
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.db import connection
 logger = logging.getLogger(__name__)
@@ -136,16 +136,33 @@ def stock_detail(request, snum):
     return render(request, 'stock_detail.html', {'stock': stock})
 
 def inventory_view(request, customer_id):
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            SELECT inventory.Snum, inventory.Amount, inventory.Price, inventory.Tstmp
-            FROM inventory
-            JOIN stock ON inventory.Snum = stock.Number
-            WHERE inventory.Cid = %s;
-            """, [customer_id]
-        )
-        columns = [col[0] for col in cursor.description]
-        rows = cursor.fetchall()
-    inventory = [dict(zip(columns, row)) for row in rows]
-    return render(request, 'inventory.html', {'inventory': inventory})
+    try:
+        with connection.cursor() as cursor:
+            # 直接通过 account 获取 ctfc
+            cursor.execute("SELECT ctfc FROM customer WHERE account = %s", [customer_id])
+            flag = cursor.fetchone()
+        
+        if flag is None:
+            return HttpResponse(f"Customer with account {customer_id} does not exist")
+        
+        ctfc = flag[0]  # 提取 ctfc 的实际值
+
+    except Exception as e:
+        return HttpResponse(f"Error executing query for customer ID {customer_id}: {e}")
+
+    # 执行 SQL 查询
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT inventory.Snum, inventory.Amount, inventory.Price, inventory.Tstmp
+                FROM inventory
+                JOIN stock ON inventory.Snum = stock.Number
+                WHERE inventory.Cid = %s;
+                """, [ctfc]
+            )
+            result = cursor.fetchall()
+    except Exception as e:
+        return HttpResponse(f"Error executing query: {e}")
+
+    return render(request, 'inventory.html', {'inventory': result})
