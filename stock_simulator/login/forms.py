@@ -18,3 +18,11 @@ class RegisterForm(forms.ModelForm):
 class LoginForm(forms.Form):
     account = forms.CharField(max_length=255)
     password = forms.CharField(widget=forms.PasswordInput)
+class InventoryForm(forms.Form):
+    snum = forms.CharField(label='Snum', max_length=20)
+    amount = forms.IntegerField(label='Amount')
+    price = forms.DecimalField(label='Price', max_digits=10, decimal_places=2)
+class SellForm(forms.Form):
+    snum = forms.IntegerField(label='Stock Number')
+    amount = forms.IntegerField(label='Amount')
+    price = forms.DecimalField(label='Price')

@@ -1,21 +1,165 @@
+from datetime import timezone
 import logging
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render
 from django.template import loader
 from django.contrib import messages
 
 from members.models import Customer
-from .forms import RegisterForm, LoginForm
+from .forms import InventoryForm, RegisterForm, LoginForm
 from django.contrib.auth.models import User
-
+from django.utils import timezone 
 from django.db import connection
+from .forms import SellForm
 
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.db import connection
 logger = logging.getLogger(__name__)
+def sell(request, customer_id):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT ctfc FROM customer WHERE account = %s", [customer_id])
+            flag = cursor.fetchone()
+        
+        if flag is None:
+            return HttpResponse(f"Customer with account {customer_id} does not exist")
+        
+        ctfc = flag[0]
+
+        # 存储第一个查询的结果
+        first_result = (ctfc,)
+
+    except Exception as e:
+        return HttpResponse(f"Error executing query for customer ID {customer_id}: {e}")
+
+    if request.method == 'POST':
+        form = SellForm(request.POST)
+        if form.is_valid():
+            snum = form.cleaned_data['snum']
+            amount = form.cleaned_data['amount']
+            price = form.cleaned_data['price']
+            
+            # 使用存储的结果执行第二个查询
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT Amount FROM inventory 
+                        WHERE Cid = %s AND Snum = %s
+                        FOR UPDATE
+                    """, [first_result[0], snum])
+                    row = cursor.fetchone()
+                    
+                    if row is None:
+                        return HttpResponse(f"Customer does not have stock item with Snum {snum}")
+                    
+                    current_amount = row[0]
+                    if amount > current_amount:
+                        return HttpResponse("Insufficient stock to sell")
+                    
+                    new_amount = current_amount - amount
+
+                    cursor.execute("""
+                        UPDATE inventory 
+                        SET Amount = %s 
+                        WHERE Cid = %s AND Snum = %s
+                    """, [new_amount, first_result[0], snum])
+
+                    # 删除原表格中的行
+                    cursor.execute("""
+                        DELETE FROM inventory
+                        WHERE Cid = %s AND Snum = %s AND Amount = 0
+                    """, [first_result[0], snum])
+
+                return HttpResponseRedirect(request.path_info)
+            except Exception as e:
+                return HttpResponse(f"Error updating inventory: {e}")
+    else:
+        form = SellForm()
+
+    # Fetch inventory data excluding the sold items
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT inventory.Snum, inventory.Amount, inventory.Price, inventory.Tstmp
+                FROM inventory
+                JOIN stock ON inventory.Snum = stock.Number
+                WHERE inventory.Cid = %s;
+                """, [first_result[0]]
+            )
+            result = cursor.fetchall()
+    except Exception as e:
+        return HttpResponse(f"Error fetching inventory data: {e}")
+
+    return render(request, 'sell.html', {'inventory': result, 'form': form})
+
+def buy(request, customer_id):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT ctfc FROM customer WHERE account = %s", [customer_id])
+            flag = cursor.fetchone()
+        
+        if flag is None:
+            return HttpResponse(f"Customer with account {customer_id} does not exist")
+        
+        ctfc = flag[0]
+
+    except Exception as e:
+        return HttpResponse(f"Error executing query for customer ID {customer_id}: {e}")
+
+    if request.method == 'POST':
+        form = InventoryForm(request.POST)
+        if form.is_valid():
+            snum = form.cleaned_data['snum']
+            amount = form.cleaned_data['amount']
+            price = form.cleaned_data['price']
+            
+            # Check if the stock item exists
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT Number FROM stock WHERE Number = %s", [snum])
+                    stock_item = cursor.fetchone()
+                    
+                    if stock_item is None:
+                        return HttpResponse(f"Stock item with Snum {snum} does not exist")
+            except Exception as e:
+                return HttpResponse(f"Error checking stock item: {e}")
+            
+            # Insert into inventory
+            tstmp = timezone.now()
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        INSERT INTO inventory (Cid, Snum, Amount, Price, Tstmp)
+                        VALUES (%s, %s, %s, %s, %s);
+                        """, [ctfc, snum, amount, price, tstmp]
+                    )
+                return HttpResponseRedirect(request.path_info)  
+            except Exception as e:
+                return HttpResponse(f"Error inserting data into inventory: {e}")
+    else:
+        form = InventoryForm()
+
+    # Fetch inventory data
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT inventory.Snum, inventory.Amount, inventory.Price, inventory.Tstmp
+                FROM inventory
+                JOIN stock ON inventory.Snum = stock.Number
+                WHERE inventory.Cid = %s;
+                """, [ctfc]
+            )
+            result = cursor.fetchall()
+    except Exception as e:
+        return HttpResponse(f"Error fetching inventory data: {e}")
+
+    return render(request, 'buy.html', {'inventory': result, 'form': form})
 
 def login_view(request):
     login_page = loader.get_template('login.html')
