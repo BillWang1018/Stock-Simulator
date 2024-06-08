@@ -11,7 +11,7 @@
 </head>
 
 <style>
-    .fourth-right { /*右上第四顆按鈕*/
+    .last-page { /*返回行情介面*/
         text-align: center;
         color: white;
         font-size: 16px;
@@ -23,39 +23,24 @@
         cursor: pointer;
         position: fixed;
         top: 30px;
-        right: 300px;
-        z-index: 9999;
-    }
-    .five-right {
-        text-align: center;
-        color: white;
-        font-size: 16px;
-        padding: 10px;
-        background-color: black;
-        border-radius: 15%;
-        text-decoration: none;
-        font-weight: bold;
-        cursor: pointer;
-        position: fixed;
-        top: 30px;
-        right: 370px;
+        left: 100px;
         z-index: 9999;
     }
 </style>
 
 <body>
-    <a href="/" class="home"> 首頁 </a>
+    <a href="/"> <button class="home"> 首頁 </button> </a>
     <a href="{% url 'logout' %}"> <button class="first-right"> 登出 </button> </a>
 
     <a href="{% url 'inventory' user.username %}"> <button class="second-right"> 查看庫存 </button> </a>
-    <a href="{%url 'snum'%}"> <button class="third-right"> 目前行情 </button> </a>
-    <a href="{% url 'buy' user.username %}"> <button class="fourth-right"> 買進 </button> </a>
-    <a href="{% url 'sell' user.username %}"> <button class="five-right"> 賣出 </button> </a>
+    <a href="{% url 'buy' user.username %}"> <button class="third-right"> 買進 </button> </a>
+    <a href="{% url 'sell' user.username %}"> <button class="fourth-right"> 賣出 </button> </a>
+    <a href="{%url 'snum'%}"> <button class="last-page"> 目前行情 </button> </a>
     <div class="main">
     <h1> {{ stock.Snum }} 的目前行情 </h1>
     <table>
         <tr>
-            <th> 股票代碼 </th>
+            <th> 股票代號 </th>
             <td> {{ stock.Snum }} </td>
         </tr>
         <tr>
