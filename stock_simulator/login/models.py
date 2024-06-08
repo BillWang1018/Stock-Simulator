@@ -7,8 +7,8 @@ class Customer(models.Model):
     name = models.CharField(max_length=50)
     identity = models.CharField(max_length=50, primary_key=True, unique=True)
     account = models.CharField(max_length=50, unique=True)
-    password = models.CharField(max_length=20)
     ctfc = models.CharField(max_length=50, unique=True)
+    password = models.CharField(max_length=20)
 
     def __str__(self):
         return self.name

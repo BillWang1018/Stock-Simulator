@@ -1,3 +1,5 @@
+<!-- 註冊頁面 -->
+
 {% include 'login_style.html' %}
 
 <!DOCTYPE html>
@@ -15,19 +17,19 @@
     }
     .identity {
         position: relative;
-        top: 50px;
+        top: 40px;
     }
     .account {
         position: relative;
-        top: 70px;
+        top: 60px;
     }
     .passwd {
         position: relative;
-        top: 90px;
+        top: 80px;
     }
     .ctfc {
         position: relative;
-        top: 110px;
+        top: 100px;
     }
     .submit {
         height: 40px;
@@ -39,43 +41,45 @@
         background-color: black;
         cursor: pointer;
         position: relative;
-        top: 140px;
+        top: 130px;
     }
 </style>
 
 <body>
+<a href="/" class="home"> 首頁 </a>
+<a href="{% url 'login' %}"> <button class="first-right"> 登入 </button> </a>
 <div class="main">
-        <h1> Register </h1>
-        <form method="post">
-            {% csrf_token %}
-            <!--<div class="name">
-                <label class="label" for="{{ form.name.id_for_label }}"> {{ form.name.label }} </label>
-                <br>
-                {{ form.name }}
-            </div>
-            <div class="identity">
-                <label class="label" for="{{ form.identity.id_for_label }}"> {{ form.identity.label }} </label>
-                <br>
-                {{ form.identity }}
-            </div>
-            <div class="account">
-                <label class="label" for="{{ form.account.id_for_label }}"> {{ form.account.label }} </label>
-                <br>
-                {{ form.account }}
-            </div>
-            <div class="passwd">
-                <label class="label" for="{{ form.password.id_for_label }}"> {{ form.password.label }} </label>
-                <br>
-                {{ form.password }}
-            </div>
-            <div class="ctfc">
-                <label class="label" for="{{ form.ctfc.id_for_label }}"> {{ form.ctfc.label }} </label>
-                <br>
-                {{ form.ctfc }}
-            </div>-->
-            {{ form.as_p }}
-            <button type="submit" class="submit"> 註冊 </button>
-        </form>
+    <h1> 請註冊您的帳戶 </h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="name">
+            <label class="label" for="{{ form.name.id_for_label }}"> {{ form.name.label }} </label>
+            <br>
+            {{ form.name }}
+        </div>
+        <div class="identity">
+            <label class="label" for="{{ form.identity.id_for_label }}"> {{ form.identity.label }} </label>
+            <br>
+            {{ form.identity }}
+        </div>
+        <div class="account">
+            <label class="label" for="{{ form.account.id_for_label }}"> {{ form.account.label }} </label>
+            <br>
+            {{ form.account }}
+        </div>
+        <div class="passwd">
+            <label class="label" for="{{ form.password.id_for_label }}"> {{ form.password.label }} </label>
+            <br>
+            {{ form.password }}
+        </div>
+        <div class="ctfc">
+            <label class="label" for="{{ form.ctfc.id_for_label }}"> {{ form.ctfc.label }} </label>
+            <br>
+            {{ form.ctfc }}
+        </div>
+        <!--{{ form.as_p }}-->
+        <button type="submit" class="submit"> 註冊 </button>
+    </form>
 </div>
 </body>
 

@@ -1,22 +1,35 @@
+<!-- 行情介面 -->
+
 <!DOCTYPE html>
+
+{% include 'login_style.html' %}
+
 <html>
+
 <head>
-    <title>Stock Information</title>
+    <title> Quotation </title>
 </head>
 <body>
-<a href="/" class="home">首頁</a>
-<a href="/admin" class="admin">管理</a>
-<h1>Stock Information</h1>
-<table>
-    <tr>
-        <th>Snum</th>
-    </tr>
-    {% for member in members %}
-    <tr>
-        <td><a href="/stock/{{ member.Snum }}">{{ member.Snum }}</a></td>
-    </tr>
-    {% endfor %}
-</table>
+    <a href="/" class="home"> 首頁 </a>
+    <a href="{% url 'logout' %}"> <button class="first-right"> 登出 </button> </a>
+    <a href="{% url 'inventory' user.username %}"> <button class="second-right"> 查看庫存 </button> </a>
+    <a href="{% url 'buy' user.username %}"> <button class="third-right"> 買進 </button> </a>
+    <a href="{% url 'sell' user.username %}"> <button class="fourth-right"> 賣出 </button> </a>
+    <!--<a href="/admin" class="admin"> 管理 </a>-->
+    <div class="main">
+        <h1> 股票模擬器 </h1>
+        （您目前登入的帳號為 <b> {{ user.username }} </b>）
+        <hr>
+        <h2> 目前行情 </h2>
+        <h3> （請點選股票代碼以觀看各股行情） </h3>
+        <table>
+            {% for member in members %}
+            <tr>
+                <td> <a href="/stock/{{ member.Snum }}"> {{ member.Snum }} </a> </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </body>
-</html>
 
+</html>

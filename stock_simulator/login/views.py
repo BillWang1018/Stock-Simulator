@@ -238,13 +238,13 @@ def register_view(request):
                 name = form.cleaned_data['name']
                 identity = form.cleaned_data['identity']
                 account = form.cleaned_data['account']
-                password = form.cleaned_data['password']
                 ctfc = form.cleaned_data['ctfc']
+                password = form.cleaned_data['password']
 
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "INSERT INTO customer (Name, Identity, Account, Ctfc, password) VALUES (%s, %s, %s, %s, %s);",
-                        [name, identity, account, password, ctfc]
+                        [name, identity, account, ctfc, password]
                     )
                 messages.success(request, 'Account created successfully!')
                 return redirect('/')

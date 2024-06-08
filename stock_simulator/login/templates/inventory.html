@@ -1,47 +1,53 @@
+<!-- 庫存介面 -->
+ 
 {% extends "master.html" %}
 
 {% block title %}
-    Stock Simulator
+Inventory
 {% endblock %}
 
 {% block content %}
+
+{% include 'login_style.html' %}
+
 <div class="main">
-    <h1>股票模擬器</h1>
-    <hr>
     {% if user.is_authenticated %}
-    <a href="{% url 'logout' %}">登出</a> (You have logged in as {{ user.username }}) 
-    <a href="{% url 'inventory' user.username %}">查看庫存</a>
-    <a href="{% url 'buy' user.username %}">買進</a>
-    <a href="{% url 'sell' user.username %}">賣出</a> <!-- Check this line -->
+    <a href="{% url 'logout' %}"> <button class="first-right"> 登出 </button> </a>
+    <a href="{%url 'snum'%}"> <button class="second-right"> 目前行情 </button> </a>
+    <a href="{% url 'buy' user.username %}"> <button class="third-right"> 買進 </button> </a>
+    <a href="{% url 'sell' user.username %}"> <button class="fourth-right"> 賣出 </button> </a>
+    <h1> 股票模擬器 </h1>
+    （您目前登入的帳號為 <b> {{ user.username }} </b>）
+    <hr>
    {% else %}
-    <a href="{% url 'login' %}" class="upper-right-button">登入</a>
+    <a href="{% url 'login' %}" class="upper-right-button"> 登入 </a>
    {% endif %}
 
-    
     {% if inventory %}
-        <h2>您的庫存</h2>
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>股票編號</th>
-                    <th>數量</th>
-                    <th>價格</th>
-                    <th>時間戳</th> 
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in inventory %}
-        <tr>
-            <td>{{ item.0 }}</td>
-            <td>{{ item.1 }}</td>
-            <td>{{ item.2 }}</td>
-            <td>{{ item.3 }}</td>
-        </tr>
-        {% endfor %}
-            </tbody>
-        </table>
+    <h2> 您的庫存 </h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th> 股票代碼 </th>
+                <th> 數量 </th>
+                <th> 價格 </th>
+                <th> 時間戳 </th> 
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inventory %}
+            <tr>
+                <td>{{ item.0 }}</td>
+                <td>{{ item.1 }}</td>
+                <td>{{ item.2 }}</td>
+                <td>{{ item.3 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% else %}
-        <p>您沒有庫存記錄。</p>
+        <p> 您沒有庫存記錄。</p>
     {% endif %}
 </div>
+<footer></footer>
 {% endblock %}

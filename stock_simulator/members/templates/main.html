@@ -5,16 +5,22 @@ Stock Simulator
 {% endblock %}
 
 {% block content %}
-<div class="main">
-    <h1> 股票模擬器 </h1>
-     
-    <hr>
     {% if user.is_authenticated %}
-        <a href="{% url 'logout' %}"> <button class="first-right"> 登出 </button> </a> （您目前登入的帳號為 {{ user.username }}） 
-        <a href="{% url 'inventory' user.username %}"> <button class="third-right"> 查看庫存 </button> </a>
+    <a href="{% url 'logout' %}"> <button class="first-right"> 登出 </button> </a>
+    <a href="{%url 'snum'%}"> <button class="second-right"> 目前行情 </button> </a>
+    <a href="{% url 'inventory' user.username %}"> <button class="third-right"> 查看庫存 </button> </a>
+    <div class="main">
+        <h1> 股票模擬器 </h1>
+        （您目前登入的帳號為 <b> {{ user.username }} </b>） 
+        <hr>
+    </div>
     {% else %}
-        <a href="{% url 'login' %}"> <button class="first-right"> 登入 </button> </a>
+    <a href="{% url 'login' %}"> <button class="first-right"> 登入 </button> </a>
+    <a href="{% url 'login' %}"> <button class="second-right"> 目前行情 </button> </a>
+    <a href="{% url 'login' %}"> <button class="third-right"> 查看庫存 </button> </a>
+    <div class="visitor-main">
+        <h1> 歡迎來到股票模擬器！<br> 您目前為訪客模式 請先登入帳戶 </h1>
+    </div>
     {% endif %}
-</div>
 
 {% endblock %}

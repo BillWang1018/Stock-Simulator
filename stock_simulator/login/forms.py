@@ -4,13 +4,13 @@ from members.models import Customer  # 修改导入路径
 class RegisterForm(forms.ModelForm):
     class Meta:
         model = Customer
-        fields = ['name', 'identity', 'account', 'password', 'ctfc']
+        fields = ['name', 'identity', 'account', 'ctfc', 'password']
         labels = {
             'name': '姓名',
             'identity': '身分字號',
             'account': '帳號',
-            'password': '密碼',
             'ctfc': '股票憑證',
+            'password': '密碼',
         }
         widgets = {
             'name': forms.TextInput(
