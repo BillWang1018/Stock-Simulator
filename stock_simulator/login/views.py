@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render
 from django.template import loader
 from django.contrib import messages
-
+from datetime import timedelta
 from members.models import Customer
 from .forms import InventoryForm, RegisterForm, LoginForm
 from django.contrib.auth.models import User
@@ -18,6 +18,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.db import connection
 logger = logging.getLogger(__name__)
+
 def sell(request, customer_id):
     try:
         with connection.cursor() as cursor:
@@ -95,7 +96,6 @@ def sell(request, customer_id):
         return HttpResponse(f"Error fetching inventory data: {e}")
 
     return render(request, 'sell.html', {'inventory': result, 'form': form})
-
 def buy(request, customer_id):
     try:
         with connection.cursor() as cursor:
@@ -128,19 +128,33 @@ def buy(request, customer_id):
             except Exception as e:
                 return HttpResponse(f"Error checking stock item: {e}")
             
-            # Insert into inventory
-            tstmp = timezone.now()
+            # Insert into inventory and update quotations
+            tstmp = timezone.now() + timedelta(hours=8)
             try:
                 with connection.cursor() as cursor:
+                    # 插入库存数据
                     cursor.execute(
                         """
                         INSERT INTO inventory (Cid, Snum, Amount, Price, Tstmp)
-                        VALUES (%s, %s, %s, %s, %s);
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE Amount = Amount + VALUES(Amount);
                         """, [ctfc, snum, amount, price, tstmp]
                     )
-                return HttpResponseRedirect(request.path_info)  
+
+                    # 删除旧的行情记录
+                    cursor.execute("DELETE FROM quotations WHERE snum = %s", [snum])
+
+                    # 插入新的行情记录到行情表
+                    cursor.execute(
+                        """
+                        INSERT INTO quotations (snum, buyamt, sellamt, tstmp, sprice)
+                        VALUES (%s, %s, %s, %s, %s)
+                        """, [snum, amount, 0, tstmp, price]
+                    )
+
+                return HttpResponseRedirect(request.path_info)
             except Exception as e:
-                return HttpResponse(f"Error inserting data into inventory: {e}")
+                return HttpResponse(f"Error inserting data into inventory or quotations: {e}")
     else:
         form = InventoryForm()
 
@@ -177,7 +191,6 @@ def login_view(request):
             account = login_form.cleaned_data['account']
             password = login_form.cleaned_data['password']
             user = None
-            aa = 0
             with connection.cursor() as cursor:
                 cursor.execute("SELECT * FROM customer WHERE account = %s", [account])
                 row = cursor.fetchone()
@@ -187,7 +200,6 @@ def login_view(request):
                     db_password = None
 
             if row and password == db_password:
-                aa = 1
                 user, created = User.objects.get_or_create(username=account)
                 if created:
                     user.set_password(password)
@@ -203,8 +215,6 @@ def login_view(request):
                         rows = cursor.fetchall()
                     members = [dict(zip(columns, row)) for row in rows]
                     return render(request, 'stocks.html', {'members': members})
-
-                    #return redirect('stocks')
 
             message = f'Login failed for account: {account}.'
             return HttpResponse(message)
