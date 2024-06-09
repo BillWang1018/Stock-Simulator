@@ -9,7 +9,7 @@ Stock Simulator
     <a href="{% url 'logout' %}"> <button class="first-right"> 登出 </button> </a>
     <a href="{%url 'snum'%}"> <button class="second-right"> 目前行情 </button> </a>
     <a href="{% url 'inventory' user.username %}"> <button class="third-right"> 查看庫存 </button> </a>
-    <a href="{%url 'stock'%}"> <button class="fourth-right"> 所有股票 </button> </a>
+    <a href="{%url 'stock_inventory'%}"> <button class="fourth-right"> 所有股票 </button> </a>
     <div class="main">
         <h1> 股票模擬器 </h1>
         （您目前登入的帳號為 <b> {{ user.username }} </b>） 

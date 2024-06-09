@@ -18,7 +18,16 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.db import connection
 logger = logging.getLogger(__name__)
+from django.shortcuts import render
+from django.db import connection
 
+def stock_inventory(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM stock;")
+        columns = [col[0] for col in cursor.description]
+        rows = cursor.fetchall()
+    members = [dict(zip(columns, row)) for row in rows]
+    return render(request, 'stock_inventory.html', {'members': members})
 def sell(request, customer_id):
     try:
         with connection.cursor() as cursor:
@@ -30,6 +39,9 @@ def sell(request, customer_id):
         
         ctfc = flag[0]
 
+        # 存储第一个查询的结果
+        first_result = (ctfc,)
+
     except Exception as e:
         return HttpResponse(f"Error executing query for customer ID {customer_id}: {e}")
 
@@ -40,55 +52,44 @@ def sell(request, customer_id):
             amount = form.cleaned_data['amount']
             price = form.cleaned_data['price']
             
+            # 使用存储的结果执行第二个查询
             try:
                 with connection.cursor() as cursor:
-                    # 获取当前库存数量和价格
                     cursor.execute("""
-                        SELECT Amount, Price FROM inventory 
-                        WHERE Cid = %s AND Snum = %s AND Price = %s
+                        SELECT Amount FROM inventory 
+                        WHERE Cid = %s AND Snum = %s
                         FOR UPDATE
-                    """, [ctfc, snum, price])
+                    """, [first_result[0], snum])
                     row = cursor.fetchone()
                     
                     if row is None:
-                        return HttpResponse(f"Customer does not have stock item with Snum {snum} and Price {price}")
+                        return HttpResponse(f"Customer does not have stock item with Snum {snum}")
                     
-                    current_amount, current_price = row
-
+                    current_amount = row[0]
                     if amount > current_amount:
                         return HttpResponse("Insufficient stock to sell")
                     
                     new_amount = current_amount - amount
 
-                    # 更新库存
-                    if new_amount == 0:
-                        cursor.execute("""
-                            DELETE FROM inventory
-                            WHERE Cid = %s AND Snum = %s AND Price = %s
-                        """, [ctfc, snum, price])
-                    else:
-                        cursor.execute("""
-                            UPDATE inventory 
-                            SET Amount = %s 
-                            WHERE Cid = %s AND Snum = %s AND Price = %s
-                        """, [new_amount, ctfc, snum, price])
+                    cursor.execute("""
+                        UPDATE inventory 
+                        SET Amount = %s 
+                        WHERE Cid = %s AND Snum = %s
+                    """, [new_amount, first_result[0], snum])
 
-                    # 更新行情
-                    tstmp = timezone.now() + timedelta(hours=8)
-                    cursor.execute("DELETE FROM quotations WHERE snum = %s AND sprice = %s", [snum, price])
-                    cursor.execute(
-                        """
-                        INSERT INTO quotations (snum, buyamt, sellamt, tstmp, sprice)
-                        VALUES (%s, %s, %s, %s, %s)
-                        """, [snum, 0, amount, tstmp, price]
-                    )
+                    # 删除原表格中的行
+                    cursor.execute("""
+                        DELETE FROM inventory
+                        WHERE Cid = %s AND Snum = %s AND Amount = 0
+                    """, [first_result[0], snum])
 
                 return HttpResponseRedirect(request.path_info)
             except Exception as e:
-                return HttpResponse(f"Error updating inventory or quotations: {e}")
+                return HttpResponse(f"Error updating inventory: {e}")
     else:
         form = SellForm()
 
+    # Fetch inventory data excluding the sold items
     try:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -97,7 +98,7 @@ def sell(request, customer_id):
                 FROM inventory
                 JOIN stock ON inventory.Snum = stock.Number
                 WHERE inventory.Cid = %s;
-                """, [ctfc]
+                """, [first_result[0]]
             )
             result = cursor.fetchall()
     except Exception as e:
@@ -223,7 +224,6 @@ def login_view(request):
                         rows = cursor.fetchall()
                     members = [dict(zip(columns, row)) for row in rows]
                     return redirect('/')
-                    #return render(request, 'stocks.html', {'members': members})
 
             message = f'Login failed for account: {account}.'
             return HttpResponse(message)
@@ -247,13 +247,13 @@ def register_view(request):
                 name = form.cleaned_data['name']
                 identity = form.cleaned_data['identity']
                 account = form.cleaned_data['account']
-                ctfc = form.cleaned_data['ctfc']
                 password = form.cleaned_data['password']
+                ctfc = form.cleaned_data['ctfc']
 
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "INSERT INTO customer (Name, Identity, Account, Ctfc, password) VALUES (%s, %s, %s, %s, %s);",
-                        [name, identity, account, ctfc, password]
+                        [name, identity, account, password, ctfc]
                     )
                 messages.success(request, 'Account created successfully!')
                 return redirect('/')

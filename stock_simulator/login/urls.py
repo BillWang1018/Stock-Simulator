@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from . import views
+from login import views  # Ensure this import statement is correct
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -13,5 +13,6 @@ urlpatterns = [
     path('snum/', views.snum_view, name='snum'),
     path('inventory/<str:customer_id>/', views.inventory_view, name='inventory'),
     path('buy/<str:customer_id>/', views.buy, name='buy'),
-    path('sell/<str:customer_id>/', views.sell, name='sell'),  # Add this line
+    path('sell/<str:customer_id>/', views.sell, name='sell'),
+    path('stock_inventory', views.stock_inventory, name='stock_inventory'),  # Ensure this line is correct
 ]
