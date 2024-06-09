@@ -28,6 +28,7 @@ def stock_inventory(request):
         rows = cursor.fetchall()
     members = [dict(zip(columns, row)) for row in rows]
     return render(request, 'stock_inventory.html', {'members': members})
+
 def sell(request, customer_id):
     try:
         with connection.cursor() as cursor:
@@ -57,13 +58,13 @@ def sell(request, customer_id):
                 with connection.cursor() as cursor:
                     cursor.execute("""
                         SELECT Amount FROM inventory 
-                        WHERE Cid = %s AND Snum = %s
+                        WHERE Cid = %s AND Snum = %s AND Price = %s
                         FOR UPDATE
-                    """, [first_result[0], snum])
+                    """, [first_result[0], snum, price])
                     row = cursor.fetchone()
                     
                     if row is None:
-                        return HttpResponse(f"Customer does not have stock item with Snum {snum}")
+                        return HttpResponse(f"Customer does not have stock item with Snum {snum} and Price {price}")
                     
                     current_amount = row[0]
                     if amount > current_amount:
@@ -74,14 +75,24 @@ def sell(request, customer_id):
                     cursor.execute("""
                         UPDATE inventory 
                         SET Amount = %s 
-                        WHERE Cid = %s AND Snum = %s
-                    """, [new_amount, first_result[0], snum])
+                        WHERE Cid = %s AND Snum = %s AND Price = %s
+                    """, [new_amount, first_result[0], snum, price])
 
                     # 删除原表格中的行
                     cursor.execute("""
                         DELETE FROM inventory
-                        WHERE Cid = %s AND Snum = %s AND Amount = 0
-                    """, [first_result[0], snum])
+                        WHERE Cid = %s AND Snum = %s AND Amount = 0 AND Price = %s
+                    """, [first_result[0], snum, price])
+
+                    # 更新行情信息
+                    tstmp = timezone.now() + timedelta(hours=8)
+                    cursor.execute("DELETE FROM quotations WHERE snum = %s", [snum])
+                    cursor.execute(
+                        """
+                        INSERT INTO quotations (snum, buyamt, sellamt, tstmp, sprice)
+                        VALUES (%s, %s, %s, %s, %s)
+                        """, [snum, 0, amount, tstmp, price]
+                    )
 
                 return HttpResponseRedirect(request.path_info)
             except Exception as e:
@@ -105,6 +116,7 @@ def sell(request, customer_id):
         return HttpResponse(f"Error fetching inventory data: {e}")
 
     return render(request, 'sell.html', {'inventory': result, 'form': form})
+
 def buy(request, customer_id):
     try:
         with connection.cursor() as cursor:
